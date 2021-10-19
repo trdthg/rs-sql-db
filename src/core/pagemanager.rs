@@ -5,7 +5,8 @@ use std::convert::TryInto;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::mem::{size_of, take};
-use std::os::windows::prelude::FileExt;
+// use std::os::windows::prelude::FileExt;
+use std::os::unix::prelude::FileExt;
 use std::rc::{Rc, Weak};
 
 use super::super::tree::bplustree::*;
@@ -215,7 +216,7 @@ pub(crate) struct PageManager {
 impl PageManager {
     pub fn create(file_name: &str) -> Self {
         let f = File::create(file_name).unwrap();
-        f.seek_write(&[b'0'], 64 * PAGE_SIZE as u64).unwrap();
+        f.write_at(&[b'0'], 64 * PAGE_SIZE as u64).unwrap();
         let f = OpenOptions::new()
             .read(true)
             .write(true)
@@ -245,7 +246,7 @@ impl PageManager {
         let name = tree.name.as_str();
         let file_name = format!("{}.db", name);
         let f = File::create(file_name.as_str()).unwrap();
-        f.seek_write(&[b'0'], 64 * PAGE_SIZE as u64).unwrap();
+        f.write_at(&[b'0'], 64 * PAGE_SIZE as u64).unwrap();
 
         let node = &tree.root;
         match tree.root.clone() {
@@ -254,7 +255,7 @@ impl PageManager {
                 let datapage = DataPage::from_leaf_node(leaf);
                 let mut s: Vec<u8> = datapage.to_vec_u8();
 
-                f.seek_write(&s, 0).unwrap();
+                f.write_at(&s, 0).unwrap();
                 let f = File::open(file_name.clone()).unwrap();
             }
             Some(LinkType::Branch(node)) => {
@@ -316,10 +317,10 @@ impl PageManager {
                         indexrecord,
                     };
                     let mut s: Vec<u8> = indexpage.to_vec_u8();
-                    f.seek_write(&s, start_offset as u64).unwrap();
+                    f.write_at(&s, start_offset as u64).unwrap();
                     let child_nth: u64 = a.3 as u64;
                     let father_nth: u64 = a.1 as u64;
-                    f.seek_write(
+                    f.write_at(
                         &page_id.to_ne_bytes()[..],
                         father_nth * PAGE_SIZE as u64 + HEADER_SIZE as u64 + 24 * child_nth + 16,
                     );
@@ -378,10 +379,10 @@ impl PageManager {
                     let mut s = datapage.to_vec_u8();
                     // pageheader.page_last_insert = next_offset;
                     // 写入
-                    f.seek_write(&s, start_offset.try_into().unwrap()).unwrap();
+                    f.write_at(&s, start_offset.try_into().unwrap()).unwrap();
                     let child_nth: u64 = a.3.try_into().unwrap();
                     let father_nth: u64 = a.1.try_into().unwrap();
-                    f.seek_write(
+                    f.write_at(
                         &page_id.to_ne_bytes()[..],
                         father_nth * PAGE_SIZE as u64 + HEADER_SIZE as u64 + 24 * child_nth + 16,
                     );
@@ -409,7 +410,7 @@ impl PageManager {
             // 读取header
             let mut vec = vec![];
             for i in 0..7 {
-                match f.seek_read(&mut buf, start_offset + i * 8) {
+                match f.read_at(&mut buf, start_offset + i * 8) {
                     Ok(_) => {}
                     Err(_) => {
                         println!("{}", "表为空");
@@ -426,13 +427,13 @@ impl PageManager {
                 // 是branch节点, 有next, id, pos,
                 let node_n: u64 = vec[3].try_into().unwrap();
                 for i in 0..(node_n) {
-                    f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 0)
+                    f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 0)
                         .unwrap();
                     print!("{:?} ", usize::from_ne_bytes(buf));
-                    f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 1)
+                    f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 1)
                         .unwrap();
                     print!("{:?} ", usize::from_ne_bytes(buf));
-                    f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 2)
+                    f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 2)
                         .unwrap();
                     println!("{:?} ", usize::from_ne_bytes(buf));
                 }
@@ -441,16 +442,16 @@ impl PageManager {
                 let mut row_start: u64 = start_offset + HEADER_SIZE as u64;
                 for i in 0..vec[3] {
                     // 将next读入buf
-                    f.seek_read(&mut buf, row_start);
+                    f.read_at(&mut buf, row_start);
                     let row_next: usize = usize::from_ne_bytes(buf);
                     let row_next_u64: u64 = u64::from_ne_bytes(buf);
                     let row_start_usize: usize = row_start.try_into().unwrap();
                     let len: usize = (row_next - row_start_usize);
                     // 将id读入buf
-                    f.seek_read(&mut buf, row_start + 8 * 1);
+                    f.read_at(&mut buf, row_start + 8 * 1);
                     let id = usize::from_ne_bytes(buf);
                     // 将data读入sbuf
-                    f.seek_read(&mut sbuf, row_start + 8 * 2);
+                    f.read_at(&mut sbuf, row_start + 8 * 2);
                     let s = String::from_utf8_lossy(&sbuf[0..len - 16]).to_string();
 
                     println!("{} {} {}", row_start, id, s);
@@ -473,7 +474,7 @@ impl PageManager {
             // 读取前7个数字
             let mut vec = vec![];
             for i in 0..7 {
-                f.seek_read(&mut buf, start_offset + i * 8).unwrap();
+                f.read_at(&mut buf, start_offset + i * 8).unwrap();
                 print!("{:?} ", usize::from_ne_bytes(buf));
                 vec.push(usize::from_ne_bytes(buf));
             }
@@ -493,7 +494,7 @@ impl PageManager {
         let mut sbuf = [0; 1024];
         let mut vec = vec![];
         for i in 0..7 {
-            match f.seek_read(&mut buf, start_offset + i * 8) {
+            match f.read_at(&mut buf, start_offset + i * 8) {
                 Ok(_) => {}
                 Err(e) => {
                     return None;
@@ -513,13 +514,13 @@ impl PageManager {
             let mut indexrecord = IndexRecord { row: vec![] };
             let node_n: u64 = vec[3].try_into().unwrap();
             for i in 0..(node_n) {
-                f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 0)
+                f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 0)
                     .unwrap();
                 let next = usize::from_ne_bytes(buf);
-                f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 1)
+                f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 1)
                     .unwrap();
                 let id = usize::from_ne_bytes(buf);
-                f.seek_read(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 2)
+                f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 2)
                     .unwrap();
                 let pos = usize::from_ne_bytes(buf);
                 indexrecord.row.push(RowIndex { next, id, pos });
@@ -534,14 +535,14 @@ impl PageManager {
             let mut datarecord: DataRecord = DataRecord { row: vec![] };
             let mut row_start: u64 = start_offset + HEADER_SIZE as u64;
             for i in 0..vec[3] {
-                f.seek_read(&mut buf, row_start);
+                f.read_at(&mut buf, row_start);
                 let row_next: usize = usize::from_ne_bytes(buf);
                 let row_next_u64: u64 = u64::from_ne_bytes(buf);
                 let row_start_usize: usize = row_start.try_into().unwrap();
                 let len: usize = (row_next - row_start_usize);
-                f.seek_read(&mut buf, row_start + 8 * 1);
+                f.read_at(&mut buf, row_start + 8 * 1);
                 let id = usize::from_ne_bytes(buf);
-                f.seek_read(&mut sbuf, row_start + 8 * 2);
+                f.read_at(&mut sbuf, row_start + 8 * 2);
                 // let s = String::from_utf8_lossy(&sbuf[0..len - 16]).to_string();
                 datarecord.row.push(RowData {
                     next: row_next,
@@ -599,7 +600,7 @@ impl PageManager {
                 if node.pageheader.page_last_insert <= (page_id + 1) * PAGE_SIZE {
                     let s = node.to_vec_u8();
                     println!("{:#?}", node);
-                    self.f.seek_write(
+                    self.f.write_at(
                         &s,
                         node.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                     );
@@ -623,7 +624,7 @@ impl PageManager {
                     if node.pageheader.page_last_insert <= (page_id + 1) * PAGE_SIZE as usize {
                         let s = node.to_vec_u8();
                         println!("{:#?}", node);
-                        self.f.seek_write(
+                        self.f.write_at(
                             &s,
                             node.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                         );
@@ -657,7 +658,7 @@ impl PageManager {
                     },
                 };
                 let s = datapage.to_vec_u8();
-                let obh = self.f.seek_write(&s, 0).unwrap();
+                let obh = self.f.write_at(&s, 0).unwrap();
                 self.root_page_id = 0;
                 self.max_page_id = 0;
                 return;
@@ -751,7 +752,7 @@ impl PageManager {
                     let s_top = indexpage.to_vec_u8();
                     let obh = self
                         .f
-                        .seek_write(
+                        .write_at(
                             &s_top,
                             indexpage.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                         )
@@ -760,9 +761,9 @@ impl PageManager {
                     node.pageheader.page_index_id = indexpage.fileheader.file_page_offset;
                     right.pageheader.page_index_id = indexpage.fileheader.file_page_offset;
                     let s_left = node.to_vec_u8();
-                    self.f.seek_write(&s_left, s_left_offset);
+                    self.f.write_at(&s_left, s_left_offset);
                     let s_right = right.to_vec_u8();
-                    self.f.seek_write(&s_right, s_right_offset);
+                    self.f.write_at(&s_right, s_right_offset);
 
                     self.root_page_id = indexpage.fileheader.file_page_offset;
                     self.max_page_id += 2;
@@ -770,9 +771,9 @@ impl PageManager {
                     return None;
                 } else {
                     let s_left = node.to_vec_u8();
-                    self.f.seek_write(&s_left, s_left_offset);
+                    self.f.write_at(&s_left, s_left_offset);
                     let s_right = right.to_vec_u8();
-                    self.f.seek_write(&s_right, s_right_offset);
+                    self.f.write_at(&s_right, s_right_offset);
                     self.max_page_id += 1;
 
                     if let Some(PageType::Index(mut new_top)) =
@@ -806,7 +807,7 @@ impl PageManager {
                         if new_top.pageheader.page_last_insert
                             <= (new_top.fileheader.file_page_offset + 1) * PAGE_SIZE
                         {
-                            self.f.seek_write(
+                            self.f.write_at(
                                 &s,
                                 new_top.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                             );
@@ -900,7 +901,7 @@ impl PageManager {
                     let s_top = indexpage.to_vec_u8();
                     let obh = self
                         .f
-                        .seek_write(
+                        .write_at(
                             &s_top,
                             indexpage.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                         )
@@ -909,9 +910,9 @@ impl PageManager {
                     node.pageheader.page_index_id = indexpage.fileheader.file_page_offset;
                     right.pageheader.page_index_id = indexpage.fileheader.file_page_offset;
                     let s_left = node.to_vec_u8();
-                    self.f.seek_write(&s_left, s_left_offset);
+                    self.f.write_at(&s_left, s_left_offset);
                     let s_right = right.to_vec_u8();
-                    self.f.seek_write(&s_right, s_right_offset);
+                    self.f.write_at(&s_right, s_right_offset);
 
                     self.root_page_id = indexpage.fileheader.file_page_offset;
                     self.max_page_id += 2;
@@ -919,9 +920,9 @@ impl PageManager {
                     return None;
                 } else {
                     let s_left = node.to_vec_u8();
-                    self.f.seek_write(&s_left, s_left_offset);
+                    self.f.write_at(&s_left, s_left_offset);
                     let s_right = right.to_vec_u8();
-                    self.f.seek_write(&s_right, s_right_offset);
+                    self.f.write_at(&s_right, s_right_offset);
                     self.max_page_id += 1;
 
                     let id = right.indexrecord.row[0].id;
@@ -953,7 +954,7 @@ impl PageManager {
                         if len + node.pageheader.page_last_insert
                             <= (node.fileheader.file_page_offset + 1) * PAGE_SIZE
                         {
-                            self.f.seek_write(
+                            self.f.write_at(
                                 &s,
                                 node.fileheader.file_page_offset as u64 * PAGE_SIZE as u64,
                             );
@@ -977,10 +978,10 @@ impl PageManager {
                 s.append(&mut (next_offset + new_len).to_ne_bytes().to_vec());
                 s.append(&mut id.to_ne_bytes().to_vec());
                 s.append(&mut data.as_bytes().to_vec());
-                self.f.seek_write(&s[..], next_offset as u64).unwrap();
+                self.f.write_at(&s[..], next_offset as u64).unwrap();
                 // 修改node_n
                 let right_n = node.pageheader.page_n_heap + 1;
-                self.f.seek_write(
+                self.f.write_at(
                     &right_n.to_ne_bytes(),
                     node.fileheader.file_page_offset as u64 * PAGE_SIZE as u64 + 24,
                 );
@@ -1031,7 +1032,7 @@ mod test {
         // let f = OpenOptions::new().read(true).open("student.db").unwrap();
         // let mut buf = [0; 8];
         // for i in 0..7 {
-        //     f.seek_read(&mut buf, 0 + i * 8);
+        //     f.read_at(&mut buf, 0 + i * 8);
         //     println!("{}", usize::from_ne_bytes(buf));
         // }
     }
