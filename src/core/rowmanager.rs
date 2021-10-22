@@ -188,7 +188,7 @@ mod test {
         parser.parse(token_stream);
         println!("{:?}", parser);
 
-        let mut rowmanager: RowManager = RowManager::new("user.frm");
+        let mut rowmanager: RowManager = RowManager::new("assets/user.frm");
         let bytes = rowmanager.from_parser(parser);
         println!("{:?}", bytes);
         let res = rowmanager.to_row(bytes);

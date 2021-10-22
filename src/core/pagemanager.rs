@@ -1004,7 +1004,7 @@ mod test {
 
     #[test]
     fn g() {
-        let mut PageManager = PageManager::create("student.db");
+        let mut PageManager = PageManager::create("assets/student.db");
         PageManager.insert(1, "sss".as_bytes().to_vec());
         PageManager.insert(2, "sss".as_bytes().to_vec());
         PageManager.insert(3, "sss".as_bytes().to_vec());

@@ -159,6 +159,7 @@ lazy_static! {
     .map(|x| x.to_string())
     .collect();
 }
+
 pub fn trim_code(code: &str) -> String {
     // 去注释
     let mut re = Regex::new("/\\*[\\s\\S]*\\*/").unwrap();

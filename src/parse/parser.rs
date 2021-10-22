@@ -41,8 +41,7 @@ pub struct Field {
     pub can_null: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Parser {
+pub struct ParsedSql {
     pub method: String,
     pub table: String,
     pub Pfields: Vec<String>,
@@ -51,7 +50,8 @@ pub struct Parser {
     pub Ptable: Vec<Field>,
 }
 
-impl Default for Parser {
+
+impl Default for ParsedSql {
     fn default() -> Self {
         Self {
             method: Default::default(),
@@ -63,6 +63,7 @@ impl Default for Parser {
         }
     }
 }
+
 impl Default for Ope {
     fn default() -> Self {
         Self {
@@ -72,12 +73,18 @@ impl Default for Ope {
         }
     }
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Parser {
+    
+}
 impl Parser {
+    
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn parse(&mut self, token_stream: Vec<Token>) -> &mut Self {
+    pub fn parse(token_stream: Vec<Token>) -> &mut Self {
         match &token_stream[0].tokentype {
             TokenType::KeyWord => match token_stream[0].value.as_str() {
                 "select" => {
