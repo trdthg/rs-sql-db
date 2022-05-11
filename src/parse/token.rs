@@ -96,7 +96,7 @@ pub fn remove_annotation(code: &str) -> String {
                     }
                 },
             };
-            let mut tmp;
+            let tmp;
             match state {
                 TokenState::READY => {
                     tmp = Ok(c);
@@ -240,8 +240,8 @@ pub fn trim_to_token_stream(code: &str) -> Vec<Token> {
 #[test]
 fn test() {
     let code = r#"
-        SELECT  * from  adwdw where   a   =ad  and b=ad and ; 
-        insert into user(id,name)values(1,"saadwdd")where id=1;    
+        SELECT  * from  adwdw where   a   =ad  and b=ad and ;
+        insert into user(id,name)values(1,"saadwdd")where id=1;
     "#;
     let code = trim_code(code);
     println!("{:?}", code);
