@@ -209,9 +209,9 @@ enum PageType {
 }
 
 pub(crate) struct PageManager {
-    f: File,
-    max_page_id: usize,
-    root_page_id: usize,
+    pub f: File,
+    pub max_page_id: usize,
+    pub root_page_id: usize,
 }
 impl PageManager {
     pub fn create(file_name: &str) -> Self {
@@ -1004,30 +1004,30 @@ mod test {
 
     #[test]
     fn g() {
-        let mut PageManager = PageManager::create("student.db");
-        PageManager.insert(1, "sss".as_bytes().to_vec());
-        PageManager.insert(2, "sss".as_bytes().to_vec());
-        PageManager.insert(3, "sss".as_bytes().to_vec());
-        PageManager.insert(4, "sss".as_bytes().to_vec());
-        PageManager.insert(5, "sss".as_bytes().to_vec());
-        PageManager.insert(6, "sss".as_bytes().to_vec());
-        PageManager.insert(7, "sss".as_bytes().to_vec());
-        PageManager.insert(8, "sss".as_bytes().to_vec());
-        PageManager.insert(9, "sss".as_bytes().to_vec());
-        PageManager.insert(10, "sss".as_bytes().to_vec());
-        PageManager.insert(11, "sss".as_bytes().to_vec());
-        PageManager.insert(12, "sss".as_bytes().to_vec());
-        PageManager.insert(13, "sss".as_bytes().to_vec());
-        PageManager.insert(2, "sss".as_bytes().to_vec());
-        PageManager.insert(2, "sss".as_bytes().to_vec());
-        PageManager.insert(2, "sss".as_bytes().to_vec());
+        let mut page_manager = PageManager::create("student.db");
+        page_manager.insert(1, "sss".as_bytes().to_vec());
+        page_manager.insert(2, "sss".as_bytes().to_vec());
+        page_manager.insert(3, "sss".as_bytes().to_vec());
+        page_manager.insert(4, "sss".as_bytes().to_vec());
+        page_manager.insert(5, "sss".as_bytes().to_vec());
+        page_manager.insert(6, "sss".as_bytes().to_vec());
+        page_manager.insert(7, "sss".as_bytes().to_vec());
+        page_manager.insert(8, "sss".as_bytes().to_vec());
+        page_manager.insert(9, "sss".as_bytes().to_vec());
+        page_manager.insert(10, "sss".as_bytes().to_vec());
+        page_manager.insert(11, "sss".as_bytes().to_vec());
+        page_manager.insert(12, "sss".as_bytes().to_vec());
+        page_manager.insert(13, "sss".as_bytes().to_vec());
+        page_manager.insert(2, "sss".as_bytes().to_vec());
+        page_manager.insert(2, "sss".as_bytes().to_vec());
+        page_manager.insert(2, "sss".as_bytes().to_vec());
         // PageManager.insert(14, "sss");
         println!("\n==============================");
         println!(
             "root_page_id: {} max_page_id: {}",
-            PageManager.root_page_id, PageManager.max_page_id
+            page_manager.root_page_id, page_manager.max_page_id
         );
-        PageManager.show();
+        page_manager.show();
 
         // let f = OpenOptions::new().read(true).open("student.db").unwrap();
         // let mut buf = [0; 8];

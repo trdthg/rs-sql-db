@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryInto};
+use std::collections::HashMap;
 
 use bit::BitIndex;
 
@@ -11,10 +11,10 @@ use crate::parse::parser::{Field, Parser};
 //     col4 varchar(15) not null
 // )
 struct Row {
-    empty_list_offset: u8,
-    variablelist: Vec<u8>,
-    emptylist: u8,
-    datalist: Vec<u8>,
+    empty_list_offset: u8, // 空值列表偏移量
+    variablelist: Vec<u8>, // 正常值列表
+    emptylist: u8,         // 空值列表
+    datalist: Vec<u8>,     // 数据列表
 }
 impl Default for Row {
     fn default() -> Self {
@@ -39,7 +39,7 @@ impl RowManager {
     pub fn new(frm_name: &str) -> Self {
         //
         let a = Parser::de(frm_name);
-        let fields = a.Ptable;
+        let fields = a.ptable;
         println!("self.map: {:#?}", &fields);
         Self { fields }
     }
@@ -47,7 +47,7 @@ impl RowManager {
     pub fn from_parser(&mut self, parser: Parser) -> Vec<u8> {
         let mut row = Row::new();
         let mut empty_list_len = 0;
-        for (i, (k, v)) in parser.Pfields.iter().zip(parser.Pvalues).enumerate() {
+        for (i, (k, v)) in parser.pfields.iter().zip(parser.pvalues).enumerate() {
             let field = &self.fields[i];
             // 如果字段属于变长字段类型就要在变长字段列表里标记长度,
             // 如果变长字段为空
@@ -102,7 +102,6 @@ impl RowManager {
     }
 
     pub fn to_row(&mut self, data: Vec<u8>) -> HashMap<String, Option<String>> {
-        let mut sbuf: Vec<u8> = vec![];
         let empty_list_offset = data[0];
         // 空值列表
         let emptylist: u8 = data[empty_list_offset as usize].bit_range(0..self.fields.len());
@@ -183,7 +182,7 @@ mod test {
     fn b() {
         let sql =
             "   \ninsert into user(id,col2,col3,col4,name)values(1,4,aaaaa,bbbb, cc)where id=1; ";
-        let mut token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+        let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
         let mut parser: Parser = Parser::new();
         parser.parse(token_stream);
         println!("{:?}", parser);
@@ -201,6 +200,7 @@ mod test {
         let b = [1, 2, 3];
         for (x, y) in a.iter().zip(b.iter()) {
             //
+            println!("{} {}", x, y);
         }
     }
 
@@ -210,8 +210,6 @@ mod test {
         println!("{}", a);
         let b = a.to_ne_bytes();
         println!("{:?}", b);
-
-        let a = 1;
 
         let mut value = 0b11010110u8;
 

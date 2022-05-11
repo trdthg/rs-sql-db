@@ -1,6 +1,9 @@
-use super::token::{self, Token, TokenState, TokenType};
-use std::io::{BufRead, BufReader, Read, Write};
-use std::{collections::HashMap, convert::TryInto, fs::File};
+use crate::parse::token;
+
+use super::token::{Token, TokenType};
+
+use std::fs::File;
+use std::io::{BufReader, Read, Write};
 
 use serde_derive::{Deserialize, Serialize};
 
@@ -45,10 +48,10 @@ pub struct Field {
 pub struct Parser {
     pub method: String,
     pub table: String,
-    pub Pfields: Vec<String>,
-    pub Pvalues: Vec<String>,
-    pub Pwhere: Vec<Ope>,
-    pub Ptable: Vec<Field>,
+    pub pfields: Vec<String>,
+    pub pvalues: Vec<String>,
+    pub pwhere: Vec<Ope>,
+    pub ptable: Vec<Field>,
 }
 
 impl Default for Parser {
@@ -56,13 +59,14 @@ impl Default for Parser {
         Self {
             method: Default::default(),
             table: Default::default(),
-            Pfields: Default::default(),
-            Pvalues: Default::default(),
-            Pwhere: Default::default(),
-            Ptable: Default::default(),
+            pfields: Default::default(),
+            pvalues: Default::default(),
+            pwhere: Default::default(),
+            ptable: Default::default(),
         }
     }
 }
+
 impl Default for Ope {
     fn default() -> Self {
         Self {
@@ -72,6 +76,7 @@ impl Default for Ope {
         }
     }
 }
+
 impl Parser {
     pub fn new() -> Self {
         Self::default()
@@ -118,7 +123,7 @@ impl Parser {
                         parsestate = ParseState::InTable;
                     }
                     "null" => {
-                        self.Ptable.last_mut().unwrap().can_null = false;
+                        self.ptable.last_mut().unwrap().can_null = false;
                     }
                     _ => {}
                 },
@@ -127,7 +132,7 @@ impl Parser {
                         self.table = value.to_string();
                     }
                     ParseState::InFields => {
-                        self.Ptable.push(Field {
+                        self.ptable.push(Field {
                             value: value.to_string(),
                             fieldtype: String::new(),
                             bitsize: 0,
@@ -136,20 +141,20 @@ impl Parser {
                     }
                     ParseState::InField => {
                         println!("{}", value);
-                        self.Ptable.last_mut().unwrap().bitsize = value.parse().unwrap();
+                        self.ptable.last_mut().unwrap().bitsize = value.parse().unwrap();
                     }
                     _ => {}
                 },
                 &TokenType::ELEMTYPE => match value {
                     "int" => {
-                        self.Ptable.last_mut().unwrap().fieldtype = "int".to_string();
-                        self.Ptable.last_mut().unwrap().bitsize = 8;
+                        self.ptable.last_mut().unwrap().fieldtype = "int".to_string();
+                        self.ptable.last_mut().unwrap().bitsize = 8;
                     }
                     "varchar" => {
-                        self.Ptable.last_mut().unwrap().fieldtype = "varchar".to_string();
+                        self.ptable.last_mut().unwrap().fieldtype = "varchar".to_string();
                     }
                     "char" => {
-                        self.Ptable.last_mut().unwrap().fieldtype = "char".to_string();
+                        self.ptable.last_mut().unwrap().fieldtype = "char".to_string();
                     }
                     _ => {}
                 },
@@ -209,7 +214,7 @@ impl Parser {
                         self.table = value.to_string();
                     }
                     ParseState::InSelect => {
-                        self.Pfields.push(value.to_string());
+                        self.pfields.push(value.to_string());
                     }
 
                     _ => {}
@@ -226,7 +231,7 @@ impl Parser {
                             if let (Some(k), Some(v)) =
                                 (token_stream.get(i - 1), token_stream.get(i + 1))
                             {
-                                self.Pwhere.push(Ope {
+                                self.pwhere.push(Ope {
                                     operation: Some("=".to_string()),
                                     key: Some(k.value.clone()),
                                     value: Some(v.value.clone()),
@@ -275,7 +280,7 @@ impl Parser {
                                 if let Some(t) = token_stream.get(mark) {
                                     match t.tokentype {
                                         TokenType::String => {
-                                            self.Pfields.push(t.value.to_string());
+                                            self.pfields.push(t.value.to_string());
                                         }
                                         TokenType::Boundary => {
                                             if t.value.as_str() == ")" {
@@ -294,7 +299,7 @@ impl Parser {
                                 if let Some(t) = token_stream.get(mark) {
                                     match t.tokentype {
                                         TokenType::String => {
-                                            self.Pvalues.push(t.value.to_string());
+                                            self.pvalues.push(t.value.to_string());
                                         }
                                         TokenType::Boundary => {
                                             if t.value.as_str() == ")" {
@@ -352,8 +357,8 @@ impl Parser {
                                     if let (Some(k), Some(v)) =
                                         (token_stream.get(i - 1), token_stream.get(i + 1))
                                     {
-                                        self.Pfields.push(k.value.to_string());
-                                        self.Pvalues.push(v.value.to_string());
+                                        self.pfields.push(k.value.to_string());
+                                        self.pvalues.push(v.value.to_string());
                                     }
                                 }
                             }
@@ -363,7 +368,7 @@ impl Parser {
                             if let (Some(k), Some(v)) =
                                 (token_stream.get(i - 1), token_stream.get(i + 1))
                             {
-                                self.Pwhere.push(Ope {
+                                self.pwhere.push(Ope {
                                     operation: Some("=".to_string()),
                                     key: Some(k.value.clone()),
                                     value: Some(v.value.clone()),
@@ -419,7 +424,7 @@ impl Parser {
                                     if let (Some(k), Some(v)) =
                                         (token_stream.get(i - 1), token_stream.get(i + 1))
                                     {
-                                        self.Pwhere.push(Ope {
+                                        self.pwhere.push(Ope {
                                             operation: Some("=".to_string()),
                                             key: Some(k.value.clone()),
                                             value: Some(v.value.clone()),
@@ -473,10 +478,10 @@ impl Parser {
 
 #[test]
 fn test() {
-    let sql = "SELECT id, name from  adwdw where   a   =ad  and b=ad ";
-    let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
-    let sql = "delete from user where id = 12";
-    let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
+    // let sql = "SELECT id, name from  adwdw where   a   =ad  and b=ad ";
+    // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
+    // let sql = "delete from user where id = 12";
+    // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
     let sql = "create table user (
                                  id int,
                                col2 int ,
@@ -484,8 +489,8 @@ fn test() {
                          col4 varchar(11) ,
                    name varchar(15) not null
    )";
-    let sql = "   \ninsert into user(id,col2,col3,col4,name)values(1,4,aaaaa,bbbb, cc)where id=1; ";
-    let mut token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+    // let sql = "   \ninsert into user(id,col2,col3,col4,name)values(1,4,aaaaa,bbbb, cc)where id=1; ";
+    let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
     println!("{:#?}", token_stream);
     let mut parser: Parser = Parser::new();
     parser.parse(token_stream).execute();
@@ -494,12 +499,13 @@ fn test() {
 
 #[test]
 fn get_fun() {
-    let sql = "SELECT  * from  adwdw where   a   =ad  and b=ad ";
-    let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
-    let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
-    let sql = "delete from user where id = 12";
+    // let sql = "SELECT  * from  adwdw where   a   =ad  and b=ad ";
+    // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
+    // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
+    // let sql = "delete from user where id = 12";
     let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\") where id = 1 ";
-    let mut token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+    let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+    println!("{:?}", token_stream);
     // let mut parser: &Parser = Parser::new().parse(token_stream);
     // println!("{:#?}", parser);
 

@@ -246,7 +246,7 @@ mod test {
         headers.insert("Content-Length".to_string(), "12".to_string());
         a.request("GET", "/index", Some(headers), None);
         let buf = a.getresponse();
-        println!("{}", String::from_utf8_lossy(&buf));
+        println!("result: {}", String::from_utf8_lossy(&buf));
     }
 
     #[test]
