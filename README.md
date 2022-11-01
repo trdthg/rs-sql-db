@@ -6,8 +6,6 @@
 [Learn Rust With Entirely Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/)
 后不久的练手项目。难得莅临的各位大佬看个乐就行了。
 
-> 因为对数据库和 Rust 的理解都有很大不足，现在看来，这个项目到处都透露着不严谨，不成熟的气息
-
 ## 功能介绍
 
 ### SQL Parser
@@ -26,8 +24,8 @@
 
 ### Page
 
-_page.rs_ 中包含的主要结构体是 `PageManager`，实现了一个简单的基于 B+ 树的数据库文件管理器。目前只是实现了 B+
-树的插入和查询操作，删除相对更加复杂，这里并没有实现。
+_page.rs_ 中包含的主要结构体是 `PageManager`，实现了一个简单的基于 B+ 树的数据库文件管理器。只实现了 B+
+树的插入和查询操作，删除对应的 B+ 树操作更为复杂，这里并没有实现。
 
 > tree 文件夹则包含了一个纯内存 B+ 树的插入
 
@@ -37,7 +35,7 @@ _page.rs_ 中包含的主要结构体是 `PageManager`，实现了一个简单�
 
 _row.rs_ 的结构和 InnoDB 描述的相对更为简单，省区了回滚指针等部分。RowManager 会将单行数据解析为 `Rust` 数据类型。
 
-> http 文件夹则是对 python http 标准库的复刻，事实再次证明，无脑复刻并不行，在 Rust 里，还是要按照 Rust 的风格办事。
+> http 文件夹则是对 python http 标准库的复刻，事实证明，无脑复刻并不行，在 Rust 里，还是要按照 Rust 的风格实现。
 
 ### 参考效果
 
