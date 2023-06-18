@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bit::BitIndex;
 
-use crate::parse::parser::{Field, Parser};
+use crate::parser::parser::{Field, Parser};
 
 // create table demo (
 //     col3 int ,
@@ -31,7 +31,7 @@ impl Row {
         Row::default()
     }
 }
-// 功能是把文件中的记录解析为需要的类型, 或者是能把新插入的数据按照类型重新编码为最终会被插入到文件里的字节流
+// 功能是把文件中的记录解析为需要的类型，或者是能把新插入的数据按照类型重新编码为最终会被插入到文件里的字节流
 pub struct RowManager {
     fields: Vec<Field>,
 }
@@ -49,7 +49,7 @@ impl RowManager {
         let mut empty_list_len = 0;
         for (i, (k, v)) in parser.pfields.iter().zip(parser.pvalues).enumerate() {
             let field = &self.fields[i];
-            // 如果字段属于变长字段类型就要在变长字段列表里标记长度,
+            // 如果字段属于变长字段类型就要在变长字段列表里标记长度，
             // 如果变长字段为空
 
             //   变长字段 --> 标记长度
@@ -127,7 +127,7 @@ impl RowManager {
                 res.insert(field.value.clone(), None);
                 continue;
             } else {
-                // 若不为空, 获取到bitsize查询到字段并转为字符串
+                // 若不为空，获取到 bitsize 查询到字段并转为字符串
                 print!("start_offset: {} ", data_start_offset);
                 let (bitlen, data): (u8, String) = match field.fieldtype.as_str() {
                     "int" => {
@@ -174,8 +174,8 @@ impl RowManager {
 
 #[cfg(test)]
 mod test {
-    use super::super::super::parse::parser::Parser;
-    use super::super::super::parse::token;
+    use super::super::super::parser::parser::Parser;
+    use super::super::super::parser::token;
     use super::RowManager;
 
     #[test]

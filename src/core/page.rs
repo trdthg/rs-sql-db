@@ -9,7 +9,7 @@ use std::mem::{size_of, take};
 use std::os::unix::prelude::FileExt;
 use std::rc::{Rc, Weak};
 
-use super::super::tree::bplustree::*;
+use super::super::bptree::bptree::*;
 
 const PAGE_SIZE: usize = 152;
 const HEADER_SIZE: usize = size_of::<FileHeader>() + size_of::<PageHeader>();
@@ -30,11 +30,11 @@ impl FileHeader {
 
 #[derive(Debug, Clone)]
 struct PageHeader {
-    page_heap_top: usize,    // 首个数据的位置,
-    page_n_heap: usize,      // 堆中的记录数,
-    page_last_insert: usize, // 最后插入的位置,
-    page_leval: usize,       // 表示当前页在索引树的位置, 就是第几层, 0表示叶节点, 向上递增,
-    page_index_id: usize,    // 索引id, 表示当前页属于那个索引, (好像是指father)
+    page_heap_top: usize,    // 首个数据的位置，
+    page_n_heap: usize,      // 堆中的记录数，
+    page_last_insert: usize, // 最后插入的位置，
+    page_leval: usize,       // 表示当前页在索引树的位置，就是第几层，0 表示叶节点，向上递增，
+    page_index_id: usize,    // 索引 id, 表示当前页属于那个索引，(好像是指 father)
 }
 impl PageHeader {
     pub fn new(
@@ -64,7 +64,7 @@ struct RowData {
 struct RowIndex {
     next: usize,
     id: usize,
-    pos: usize, // 对应页节点的page_id
+    pos: usize, // 对应页节点的 page_id
 }
 
 #[derive(Debug, Clone)]
@@ -251,7 +251,7 @@ impl PageManager {
         let node = &tree.root;
         match tree.root.clone() {
             Some(LinkType::Leaf(leaf)) => {
-                // TODO root是根节点
+                // TODO root 是根节点
                 let datapage = DataPage::from_leaf_node(leaf);
                 let mut s: Vec<u8> = datapage.to_vec_u8();
 
@@ -262,9 +262,9 @@ impl PageManager {
                 // TODO
                 // * 得到了堆
 
-                // 记录branch节点
+                // 记录 branch 节点
                 let mut vec = Vec::new();
-                // 记录leaf节点
+                // 记录 leaf 节点
                 let mut vec2 = Vec::new();
                 // 初始化
                 //          node, father_page_id, depth
@@ -328,7 +328,7 @@ impl PageManager {
                     let mut tmp_i = 0;
                     for tuple in a.0.borrow().ids.clone() {
                         match tuple.link {
-                            // 插入当前的page_id就是child的father_page_id
+                            // 插入当前的 page_id 就是 child 的 father_page_id
                             LinkType::Branch(branch) => {
                                 vec.insert(0, (branch.clone(), page_id, a.2 + 1, tmp_i));
                             }
@@ -392,7 +392,7 @@ impl PageManager {
                 }
             }
             None => {
-                // TODO root为空, 新建一个区64个页, 每页16kb
+                // TODO root 为空，新建一个区 64 个页，每页 16kb
             }
             _ => {}
         }
@@ -407,7 +407,7 @@ impl PageManager {
             let mut buf = [0; 8];
             let mut sbuf = [0; 1024];
 
-            // 读取header
+            // 读取 header
             let mut vec = vec![];
             for i in 0..7 {
                 match f.read_at(&mut buf, start_offset + i * 8) {
@@ -422,9 +422,9 @@ impl PageManager {
             }
             println!("");
             let level = vec[5];
-            // 判断节点类型, 读取record
+            // 判断节点类型，读取 record
             if level > 0 {
-                // 是branch节点, 有next, id, pos,
+                // 是 branch 节点，有 next, id, pos,
                 let node_n: u64 = vec[3].try_into().unwrap();
                 for i in 0..(node_n) {
                     f.read_at(&mut buf, start_offset + HEADER_SIZE as u64 + i * 24 + 8 * 0)
@@ -438,19 +438,19 @@ impl PageManager {
                     println!("{:?} ", usize::from_ne_bytes(buf));
                 }
             } else {
-                // 是叶节点, 需要分离出next, id, data
+                // 是叶节点，需要分离出 next, id, data
                 let mut row_start: u64 = start_offset + HEADER_SIZE as u64;
                 for i in 0..vec[3] {
-                    // 将next读入buf
+                    // 将 next 读入 buf
                     f.read_at(&mut buf, row_start);
                     let row_next: usize = usize::from_ne_bytes(buf);
                     let row_next_u64: u64 = u64::from_ne_bytes(buf);
                     let row_start_usize: usize = row_start.try_into().unwrap();
                     let len: usize = (row_next - row_start_usize);
-                    // 将id读入buf
+                    // 将 id 读入 buf
                     f.read_at(&mut buf, row_start + 8 * 1);
                     let id = usize::from_ne_bytes(buf);
-                    // 将data读入sbuf
+                    // 将 data 读入 sbuf
                     f.read_at(&mut sbuf, row_start + 8 * 2);
                     let s = String::from_utf8_lossy(&sbuf[0..len - 16]).to_string();
 
@@ -471,7 +471,7 @@ impl PageManager {
             let mut buf = [0; 8];
             let mut sbuf = [0; 1024];
 
-            // 读取前7个数字
+            // 读取前 7 个数字
             let mut vec = vec![];
             for i in 0..7 {
                 f.read_at(&mut buf, start_offset + i * 8).unwrap();
@@ -595,7 +595,7 @@ impl PageManager {
         // TODO 判断是否为空
         match Self::get_page(&self, page_id as u64) {
             Some(PageType::Data(mut node)) => {
-                // ! 直接插入一条datarecord
+                // ! 直接插入一条 datarecord
                 node.push(id, data);
                 if node.pageheader.page_last_insert <= (page_id + 1) * PAGE_SIZE {
                     let s = node.to_vec_u8();
@@ -723,7 +723,7 @@ impl PageManager {
                 let s_right_offset = start_page_offset as u64;
                 // ! 判断是否为根页进行分离
                 if is_new_root {
-                    // TODO 自己是根节点, 需要创建新的根节点
+                    // TODO 自己是根节点，需要创建新的根节点
                     let start_page_offset = (max_page_id + 2) * PAGE_SIZE;
                     let indexpage = IndexPage {
                         fileheader: FileHeader::new(max_page_id + 2, max_page_id + 3),
@@ -781,7 +781,7 @@ impl PageManager {
                     {
                         let mut start_row_offset =
                             new_top.fileheader.file_page_offset * PAGE_SIZE + HEADER_SIZE;
-                        // ! 获取中间值作为id
+                        // ! 获取中间值作为 id
                         let id = right.datarecord.row[0].id;
                         new_top.indexrecord.row.push(RowIndex {
                             next: new_top.pageheader.page_last_insert + 8 * 3,
@@ -803,7 +803,7 @@ impl PageManager {
                         let s = new_top.to_vec_u8();
                         println!("{:#?}", new_top);
 
-                        // TODO 向上递归, 是否是新的根爷, 重置左右节点的父节点
+                        // TODO 向上递归，是否是新的根爷，重置左右节点的父节点
                         if new_top.pageheader.page_last_insert
                             <= (new_top.fileheader.file_page_offset + 1) * PAGE_SIZE
                         {
@@ -872,7 +872,7 @@ impl PageManager {
                 let s_right_offset = start_page_offset as u64;
                 // TODO 判断是否需要新的根页
                 if is_new_root {
-                    // TODO 自己是根节点, 需要创建新的根节点
+                    // TODO 自己是根节点，需要创建新的根节点
                     let start_page_offset = (max_page_id + 2) * PAGE_SIZE;
                     let indexpage = IndexPage {
                         fileheader: FileHeader::new(max_page_id + 2, max_page_id + 3),
@@ -973,13 +973,13 @@ impl PageManager {
             let next_offset = node.pageheader.page_last_insert;
             let new_len = size_of::<usize>() * 2 + data.as_bytes().len();
             if new_len + next_offset <= (page_id + 1) * PAGE_SIZE {
-                // * 追加一条datarecord
+                // * 追加一条 datarecord
                 let mut s: Vec<u8> = vec![];
                 s.append(&mut (next_offset + new_len).to_ne_bytes().to_vec());
                 s.append(&mut id.to_ne_bytes().to_vec());
                 s.append(&mut data.as_bytes().to_vec());
                 self.f.write_at(&s[..], next_offset as u64).unwrap();
-                // 修改node_n
+                // 修改 node_n
                 let right_n = node.pageheader.page_n_heap + 1;
                 self.f.write_at(
                     &right_n.to_ne_bytes(),
@@ -988,7 +988,7 @@ impl PageManager {
                 return true;
             } else {
                 // ? 分裂页
-                // 若不用递归,
+                // 若不用递归，
                 // father.node_n / 2, leaf.node_n / 2, new_leaf
                 return false;
             }

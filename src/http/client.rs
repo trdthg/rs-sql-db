@@ -2,11 +2,8 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 
-enum RequestState {
-    IDLE,
-    STARTED,
-    SEND,
-}
+// RequestState
+//
 // Logical State                  __state            __response
 // -------------                  -------            ----------
 // Idle                           _CS_IDLE           None
@@ -15,6 +12,11 @@ enum RequestState {
 // Unread-response                _CS_IDLE           <response_class>
 // Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 // Req-sent-unread-response       _CS_REQ_SENT       <response_class>
+enum RequestState {
+    IDLE,
+    STARTED,
+    SEND,
+}
 
 struct HttpConnection {
     http_vsn: i32,
@@ -96,10 +98,10 @@ impl HttpConnection {
             None => {}
         }
 
-        // http版本1.1 而且 指定分块编码 或者 以下条件是会发生分块编码
-        // 1. 没有指定content-length
-        // 2. body的类型是File或者iterator(不包括str, bytes等)
-        // 3. 没有明确指定Transfer-Encoding
+        // http 版本 1.1 而且 指定分块编码 或者 以下条件是会发生分块编码
+        // 1. 没有指定 content-length
+        // 2. body 的类型是 File 或者 iterator(不包括 str, bytes 等)
+        // 3. 没有明确指定 Transfer-Encoding
         let mut encode_chunked = false;
         if !self.headers.contains_key("content-length") {
             if !self.headers.contains_key("transfer-encoding") {
@@ -222,7 +224,7 @@ impl HttpConnection {
                 }
                 None => "self.socket = None".as_bytes().to_vec(),
             },
-            _ => "失去连接???".as_bytes().to_vec(),
+            _ => "失去连接？??".as_bytes().to_vec(),
         }
     }
 }
@@ -240,7 +242,7 @@ mod test {
     use super::HttpConnection;
 
     #[test]
-    fn a() {
+    fn test_get_with_header() {
         let mut a: HttpConnection = HttpConnection::new("127.0.0.1:8080").unwrap();
         let mut headers = HashMap::new();
         headers.insert("Content-Length".to_string(), "12".to_string());
@@ -250,7 +252,7 @@ mod test {
     }
 
     #[test]
-    fn b() {
+    fn test_socket_conn() {
         struct A {
             socket: Option<TcpStream>,
         }

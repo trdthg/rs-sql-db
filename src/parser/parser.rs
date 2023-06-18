@@ -1,5 +1,3 @@
-use crate::parse::token;
-
 use super::token::{Token, TokenType};
 
 use std::fs::File;
@@ -110,7 +108,7 @@ impl Parser {
     pub fn create_table(&mut self, token_stream: Vec<Token>) -> &mut Self {
         let mut parsestate = ParseState::Begin;
 
-        for (i, token) in token_stream.iter().enumerate() {
+        for (_, token) in token_stream.iter().enumerate() {
             let value = token.value.as_str();
             let tokentype = &token.tokentype;
             match tokentype {
@@ -476,38 +474,53 @@ impl Parser {
     }
 }
 
-#[test]
-fn test() {
-    // let sql = "SELECT id, name from  adwdw where   a   =ad  and b=ad ";
-    // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
-    // let sql = "delete from user where id = 12";
-    // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
-    let sql = "create table user (
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::parser::token;
+
+    #[test]
+    fn create_table() {
+        let sql = "create table user (
                                  id int,
                                col2 int ,
                             col3 char(5) ,
                          col4 varchar(11) ,
                    name varchar(15) not null
    )";
-    // let sql = "   \ninsert into user(id,col2,col3,col4,name)values(1,4,aaaaa,bbbb, cc)where id=1; ";
-    let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
-    println!("{:#?}", token_stream);
-    let mut parser: Parser = Parser::new();
-    parser.parse(token_stream).execute();
-    println!("{:#?}", parser);
-}
+        // let sql = "   \ninsert into user(id,col2,col3,col4,name)values(1,4,aaaaa,bbbb, cc)where id=1; ";
+        let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+        println!("{:#?}", token_stream);
+        let mut parser: Parser = Parser::new();
+        parser.parse(token_stream).execute();
+        println!("{:#?}", parser);
+    }
 
-#[test]
-fn get_fun() {
-    // let sql = "SELECT  * from  adwdw where   a   =ad  and b=ad ";
-    // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
-    // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
-    // let sql = "delete from user where id = 12";
-    let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\") where id = 1 ";
-    let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
-    println!("{:?}", token_stream);
-    // let mut parser: &Parser = Parser::new().parse(token_stream);
-    // println!("{:#?}", parser);
+    #[test]
+    fn insert_should_ok() {
+        let sql = "SELECT id, name from  adwdw where   a   =ad  and b=ad ";
+        // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
+        // let sql = "delete from user where id = 12";
+        // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
+        let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+        println!("{:#?}", token_stream);
+        let mut parser: Parser = Parser::new();
+        parser.parse(token_stream).execute();
+        println!("{:#?}", parser);
+    }
 
-    // parser.execute();
+    #[test]
+    fn get_fun() {
+        // let sql = "SELECT  * from  adwdw where   a   =ad  and b=ad ";
+        // let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\")where id=1; ";
+        // let sql = "update  user  set          id=1,name=\"acbeix\" where xxx=\"debsxnk\"";
+        // let sql = "delete from user where id = 12";
+        let sql = "   \ninsert into user(id,name)values(1,\"saadwdd\") where id = 1 ";
+        let token_stream = token::trim_to_token_stream(&token::trim_code(sql));
+        println!("{:?}", token_stream);
+        // let mut parser: &Parser = Parser::new().parse(token_stream);
+        // println!("{:#?}", parser);
+
+        // parser.execute();
+    }
 }

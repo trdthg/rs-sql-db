@@ -11,7 +11,7 @@ pub enum TokenState {
     ANNO_A,   // //
     ANNO_B,   // /*
     ANNO_B2,  // /* * / *
-    READY,    // 注释结束了, 且后面不是注释
+    READY,    // 注释结束了，且后面不是注释
     BLANK,
 }
 
@@ -162,24 +162,24 @@ lazy_static! {
 pub fn trim_code(code: &str) -> String {
     // 去注释
     let mut re = Regex::new("/\\*[\\s\\S]*\\*/").unwrap();
-    let mut code = Regex::replace_all(&re, &code, "");
+    let code = Regex::replace_all(&re, &code, "");
     re = Regex::new("//.*\n").unwrap();
-    let mut code = Regex::replace_all(&re, &code, "");
+    let code = Regex::replace_all(&re, &code, "");
     // 去空格
     re = Regex::new("\\s+").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " ");
+    let code = Regex::replace_all(&re, &code, " ");
 
     // 格式化运算符和边界符
     re = Regex::new("\\s?=\\s?").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " = ");
+    let code = Regex::replace_all(&re, &code, " = ");
     re = Regex::new("\\s?\\(\\s?").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " ( ");
+    let code = Regex::replace_all(&re, &code, " ( ");
     re = Regex::new("\\s?\\)\\s?").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " ) ");
+    let code = Regex::replace_all(&re, &code, " ) ");
     re = Regex::new("\\s?,\\s?").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " , ");
+    let code = Regex::replace_all(&re, &code, " , ");
     re = Regex::new("\\s?;\\s?").unwrap();
-    let mut code = Regex::replace_all(&re, &code, " ; ");
+    let code = Regex::replace_all(&re, &code, " ; ");
 
     // 变小写
     let code = code.to_ascii_lowercase();
@@ -218,7 +218,7 @@ pub fn trim_to_token_stream(code: &str) -> Vec<Token> {
     let mut vec = Vec::new();
     let words: Vec<&str> = code.split_whitespace().collect();
     let mut str_offset = 0;
-    for (i, word) in words.iter().enumerate() {
+    for (_, word) in words.iter().enumerate() {
         let word = word.to_string();
         let word_len = word.len();
         if OPERATIONS.contains(&word) {

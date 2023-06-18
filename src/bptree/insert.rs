@@ -1,6 +1,4 @@
-use std::{cell::RefMut, ptr::NonNull};
-
-use super::bplustree::*;
+use super::bptree::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -14,7 +12,7 @@ pub fn insert_leaf(node: &Rc<RefCell<LeafNode>>, id: usize, data: &str) -> usize
 
 pub fn splite_leaf(node: &Rc<RefCell<LeafNode>>) -> Rc<RefCell<BranchNode>> {
     let tmp = node.borrow_mut().ids.clone();
-    let mut new_top = BranchNode {
+    let new_top = BranchNode {
         ids: vec![],
         father: None,
     };
@@ -25,7 +23,7 @@ pub fn splite_leaf(node: &Rc<RefCell<LeafNode>>) -> Rc<RefCell<BranchNode>> {
         father: Some(Rc::downgrade(&p_t)),
     };
     let p_r = Rc::new(RefCell::new(new_right));
-    let mut new_left = LeafNode {
+    let new_left = LeafNode {
         ids: tmp[0..2].to_owned(),
         next: Some(p_r.clone()),
         father: Some(Rc::downgrade(&p_t)),
@@ -50,7 +48,7 @@ pub fn leaf_merge_with_father(
     leaf_node: &Rc<RefCell<LeafNode>>,
     pos: usize,
 ) -> usize {
-    // 获取父节点所有id
+    // 获取父节点所有 id
     let all_ids: Vec<Option<usize>> = node.borrow().ids.clone().iter().map(|x| x.id).collect();
     drop(all_ids);
     // 分离已经满了的叶节点
@@ -61,7 +59,7 @@ pub fn leaf_merge_with_father(
         .insert(pos, new_top.borrow().ids[1].clone());
     node.borrow_mut().ids[pos - 1].link = new_top.borrow().ids[0].link.clone();
 
-    // 新的father
+    // 新的 father
     if let LinkType::Leaf(leaf) = &new_top.borrow_mut().ids[0].link {
         leaf.borrow_mut().father = Some(Rc::downgrade(&node));
     }
@@ -69,7 +67,7 @@ pub fn leaf_merge_with_father(
         leaf.borrow_mut().father = Some(Rc::downgrade(&node));
     }
     let len = node.borrow().ids.len();
-    // 新的next
+    // 新的 next
     // 后驱
     if pos + 1 != len {
         if let LinkType::Leaf(leaf) = &node.borrow().ids[pos].link {
@@ -94,14 +92,14 @@ pub fn splite_branch(node: Rc<RefCell<BranchNode>>) -> Rc<RefCell<BranchNode>> {
     let tmp = unsafe { (*node.as_ptr()).ids.clone() };
 
     // new_top
-    let mut new_top = BranchNode {
+    let new_top = BranchNode {
         ids: vec![],
         father: None,
     };
     let p_t = Rc::new(RefCell::new(new_top));
 
     // 左右
-    let mut new_left = BranchNode {
+    let new_left = BranchNode {
         ids: tmp[0..3].to_owned(),
         father: Some(Rc::downgrade(&p_t)),
     };
@@ -128,8 +126,8 @@ pub fn splite_branch(node: Rc<RefCell<BranchNode>>) -> Rc<RefCell<BranchNode>> {
 }
 
 pub fn branch_merge_with_father(
-    father: Rc<RefCell<BranchNode>>,  // branch是已经满了的节点
-    new_top: Rc<RefCell<BranchNode>>, // branch是已经满了的节点
+    father: Rc<RefCell<BranchNode>>,  // branch 是已经满了的节点
+    new_top: Rc<RefCell<BranchNode>>, // branch 是已经满了的节点
 ) -> usize {
     let ids: Vec<usize> = father
         .borrow()
@@ -155,7 +153,7 @@ pub fn branch_merge_with_father(
             node.ids[pos + 1].link = new_top.borrow().ids[1].link.clone();
         }
         None => {
-            // 新的father
+            // 新的 father
             if let LinkType::Branch(branch) = &new_top.borrow_mut().ids[0].link {
                 branch.borrow_mut().father = Some(Rc::downgrade(&father));
             }
@@ -173,27 +171,27 @@ pub fn branch_merge_with_father(
 }
 
 pub fn merge(_node: Rc<RefCell<BranchNode>>) -> Option<Rc<RefCell<BranchNode>>> {
-    // * 已经是一个满了的branch_node, 需要拆分合并
+    // * 已经是一个满了的 branch_node, 需要拆分合并
 
-    // splite父节点
+    // splite 父节点
     let father_is_none = unsafe { (*_node.as_ptr()).father.as_ref().is_none() };
     if father_is_none {
         let new_top = splite_branch(_node);
         return Some(new_top);
     } else {
         // ? 是否递归与父节点合并
-        // ! 这里是一个MARK, 防止越改越乱, 救不回来就完了s
+        // ! 这里是一个 MARK, 防止越改越乱，救不回来就完了 s
         // let new_top = splite_branch(_node);
         let tmp = _node.borrow().ids.clone();
         // new_top
-        let mut new_top = BranchNode {
+        let new_top = BranchNode {
             ids: vec![],
             father: None,
         };
         let p_t = Rc::new(RefCell::new(new_top));
 
         // 左右
-        let mut new_left = BranchNode {
+        let new_left = BranchNode {
             ids: tmp[0..3].to_owned(),
             father: Some(Rc::downgrade(&p_t)),
         };
@@ -243,7 +241,7 @@ pub fn merge(_node: Rc<RefCell<BranchNode>>) -> Option<Rc<RefCell<BranchNode>>> 
                 pos
             };
             let len = unsafe {
-                let mut node = father.as_ptr();
+                let node = father.as_ptr();
                 if let LinkType::Branch(branch) = &new_top.borrow_mut().ids[0].link {
                     branch.borrow_mut().father = Some(Rc::downgrade(&father));
                 }
@@ -266,7 +264,6 @@ pub fn merge(_node: Rc<RefCell<BranchNode>>) -> Option<Rc<RefCell<BranchNode>>> 
         }
         return Some(new_top);
     }
-    None
 }
 
 pub fn find_leaf(
@@ -274,7 +271,7 @@ pub fn find_leaf(
     id: usize,
     data: &str,
 ) -> Option<Rc<RefCell<BranchNode>>> {
-    let mut node = _node.borrow_mut();
+    let node = _node.borrow_mut();
     let pos = {
         let ids: Vec<usize> = node
             .ids
@@ -282,14 +279,14 @@ pub fn find_leaf(
             .filter(|t| t.id.is_some())
             .map(|t| t.id.unwrap())
             .collect();
-        let mut pos = ids.binary_search(&id).unwrap_or_else(|x| x);
+        let pos = ids.binary_search(&id).unwrap_or_else(|x| x);
         pos
     };
     match &node.ids.get(pos - 1).unwrap().link.clone() {
         LinkType::Leaf(leaf_node) => {
             // 先插入后看是否满再进行下一步操作
             if insert_leaf(leaf_node, id, data) == MAX_DEGREE {
-                // leaf节点满了, 父节点有None节点
+                // leaf 节点满了，父节点有 None 节点
                 drop(node);
                 if leaf_merge_with_father(_node.clone(), leaf_node, pos) == MAX_DEGREE + 1 {
                     if let Some(new_root) = merge(_node.clone()) {
